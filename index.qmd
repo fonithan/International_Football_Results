@@ -1,0 +1,91 @@
+---
+title: "International Football Events"
+execute: 
+  echo: FALSE 
+---
+
+```{r}
+#| message: FALSE 
+library(tidyverse) 
+```
+
+```{r}
+#| message: FALSE 
+# Import dataset & Extract only year from the date column 
+df <- read_csv("results.csv") |> 
+  mutate(date = year(as.Date(date)), na.rm = TRUE) 
+```
+
+```{r}
+#| mesage: FALSE 
+# Combine home and away outcomes into a single data frame for each team
+home_outcomes <- df |>
+  mutate(team = home_team, outcome = case_when(
+    home_score > away_score ~ "Win",
+    home_score < away_score ~ "Lose",
+    TRUE ~ "Draw"
+  )) |>
+  select(team, outcome)
+
+away_outcomes <- df |>
+  mutate(team = away_team, outcome = case_when(
+    home_score < away_score ~ "Win",
+    home_score > away_score ~ "Lose",
+    TRUE ~ "Draw"
+  )) |>
+  select(team, outcome)
+
+all_outcomes <- bind_rows(home_outcomes, away_outcomes)
+
+# Calculate the count of Win, Lose, and Draw for each team
+outcome_per_team <- all_outcomes |>
+  group_by(team, outcome) |>
+  summarise(count = n(), .groups = 'drop') 
+#Calculate the total number of matches 
+total_matches <- outcome_per_team |> 
+  group_by(team) |> 
+  summarise(total = sum(count), .groups = 'drop')
+# Calculate the winning ratio for each team
+winning_ratios <- outcome_per_team |>
+  filter(outcome == "Win") |>
+  select(team, count) |>
+  rename(wins = count) |>
+  left_join(total_matches, by = "team") |>
+  mutate(winning_ratio = wins / total) |>
+  arrange(desc(winning_ratio))
+#Identify the top 10 teams with the most total matches
+top_teams <- total_matches |>
+  arrange(desc(total)) |>
+  slice(1:10) |>
+  pull(team)
+
+#Calculate the Win-Lose-Draw Proportion for each team
+top_10<- outcome_per_team |> 
+  filter(team %in% top_teams) |>
+  left_join(total_matches, by = "team") |> 
+  mutate(proportion = (count/total)*100) #Convert to percentage
+
+# Join the winning ratios to team outcomes
+top_10 <- top_10 |>
+  left_join(winning_ratios |> select(team, winning_ratio), by = "team")
+```
+
+```{r myplot, fig.width=8, fig.height=6}
+# Create a stacked bar plot to show the proportions
+ggplot(top_10, aes(x = reorder(team, -winning_ratio), 
+  y = proportion, fill = outcome)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Performance of Top 10 Team with Most International Apperance",
+       subtitle = "Brazil has the highest winning rate",
+       x = NULL,
+       y = "Proportion",
+       fill = "Result") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"), 
+        axis.text.y = element_text(face = "bold"), 
+        axis.ticks.y = element_line(color = "black", linetype = "solid", lineend = "butt"), 
+        plot.title = element_text(face = "bold", size = 16), 
+        plot.subtitle = element_text(face = "italic", size = 12))
+```
+
+Comparison on the performance between international football teams has been a controversial topic. The following data was collected from a live update dataset of international football matches since 1872, available on Kaggle. Data transformation and visualization were used to analyze the performance of the top 10 teams with most international appearances. The visualization indicates that the top 5 teams with highest winning rate came from Europe, South America, and Asia.

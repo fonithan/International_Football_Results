@@ -1,0 +1,5 @@
+---
+title: "Sources"
+---
+
+The dataset about International football events is collected from [Kaggle](https://www.kaggle.com/datasets/martj42/international-football-results-from-1872-to-2017/data). All the columns containing NA values as matches have not happened were dropped from the dataset. 

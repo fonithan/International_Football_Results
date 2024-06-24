@@ -1,0 +1,9 @@
+---
+title: "About"
+---
+
+My name is Gia Khang, an Economics senior student at Fulbright University Vietnam. I enjoy using Data Science to unveil insights from Economic data around the world. You can read more about my projects at [My Github Account](https://github.com/giakhang1906) or via [My email](phamgiakhang19062003@gmail.com)
+
+This project analyzes the performance of football team per countries based on their results and aims to answer the question about which team has the highest winning rate. Further information concerning the code is available on [Github repo](https://github.com/giakhang1906/International_Football_Results)
+
+This project was created as a part of [Kane’s Data Science Bootcamp](https://bootcamp.davidkane.info/)
