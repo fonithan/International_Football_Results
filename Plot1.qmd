@@ -1,0 +1,22 @@
+---
+title: "Winning Rate Overtime"
+execute: 
+  echo: FALSE 
+---
+
+```{r}
+#| message: FALSE 
+library(tidyverse) 
+```
+
+```{r}
+#| message: FALSE 
+# Import dataset & Extract only year from the date column 
+df <- read_csv("results.csv") |> 
+  mutate(date = year(as.Date(date)), na.rm = TRUE) 
+```
+
+```{r}
+
+```
+

@@ -1,0 +1,92 @@
+---
+title: "Home vs Away Performance"
+execute: 
+  echo: FALSE 
+---
+
+```{r}
+#| message: FALSE 
+library(tidyverse) 
+```
+
+```{r}
+#| message: FALSE 
+# Import dataset & Extract only year from the date column 
+df <- read_csv("results.csv") |> 
+  mutate(date = year(as.Date(date)), na.rm = TRUE) 
+```
+
+```{r myplot, fig.width=8, fig.height=6}
+# Combine home, away, and neutral outcomes into a single data frame for each team
+home_outcomes <- df %>%
+  mutate(location = "Home", team = home_team, outcome = case_when(
+    home_score > away_score ~ "Win",
+    home_score < away_score ~ "Lose",
+    TRUE ~ "Draw"
+  )) %>%
+  select(team, outcome, location)
+
+away_outcomes <- df %>%
+  mutate(location = "Away", team = away_team, outcome = case_when(
+    home_score < away_score ~ "Win",
+    home_score > away_score ~ "Lose",
+    TRUE ~ "Draw"
+  )) %>%
+  select(team, outcome, location)
+
+neutral_outcomes <- df %>%
+  filter(neutral == TRUE) %>%
+  mutate(location = "Neutral", outcome = case_when(
+    home_score > away_score ~ "Home Win",
+    home_score < away_score ~ "Away Win",
+    TRUE ~ "Draw"
+  )) %>%
+  select(home_team, away_team, outcome, location)
+
+all_outcomes <- bind_rows(home_outcomes, away_outcomes, neutral_outcomes)
+first_three_columns <- all_outcomes |>
+  select(team, outcome, location)
+
+# Calculate the count of Win, Lose, and Draw for each team at each location
+team_outcomes <- first_three_columns |>
+  group_by(team, outcome, location) |>
+  filter(!is.na(team)) |>
+  summarise(count = n(), .groups = 'drop')
+
+# Calculate the total matches played by each team
+total_matches <- team_outcomes %>%
+  group_by(team) %>%
+  summarise(total = sum(count), .groups = 'drop')
+
+# Filter to get the top 10 teams by total matches played
+top_10_teams <- total_matches |>
+  arrange(desc(total)) |>
+  slice(1:10) |>
+  pull(team)
+
+# Filter the team outcomes to only include the top 10 teams
+team_outcomes_filtered <- team_outcomes %>%
+  filter(team %in% top_10_teams)
+
+# Calculate the percentage of outcomes for each team at each location
+team_outcomes_filtered <- team_outcomes_filtered %>%
+  left_join(total_matches, by = "team") %>%
+  mutate(proportion = count / total * 100)
+
+# Create a bar plot comparing win-lose-draw outcomes for the top 10 teams
+ggplot(team_outcomes_filtered, aes(x = fct_reorder(team, total, .desc = TRUE), y = proportion, fill = outcome)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~location) +
+  labs(title = "Win-Lose-Draw Outcomes at Home vs Away for Top 10 Teams",
+       subtitle = "A country has higher chance of winning the game when playing at their home",
+       x = NULL, y = "Proportion (%)", fill = "Outcome") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        axis.text.y = element_text(face = "bold"), 
+        axis.ticks.y = element_line(color = "black", linetype = "solid", lineend = "butt"), 
+        plot.title = element_text(face = "bold", size = 16), 
+        plot.subtitle = element_text(face = "italic", size = 12))
+```
+
+In general, most countries in the Top 10 teams with most international appearances have higher winning rate when playing in their home countries, except for Uruguay. It is likely that Brazil took the most out of home advantage as they have the highest winning rate when playing at home. Moreover, when it comes to away matches, Brazil also ranked third in terms of winning rate. As a result, this finding is consistent with the fact that they have the highest winning rate over the period. Therefore, a high performance team is the team that utilizes the most out of their home advantage and also performs well when in away mathces. 
+

@@ -7,9 +7,12 @@ website:
     left:
       - href: index.qmd
         text: Home
+      - href: Plot2.qmd
+        text: Performance Analysis 
       - about.qmd
       - href: sources.qmd
         text: Sources
+     
 
 format:
   html:

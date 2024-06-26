@@ -4,7 +4,7 @@ execute:
   echo: FALSE 
 ---
 
-```{r}
+```{r setup, include = FALSE}
 #| message: FALSE 
 library(tidyverse) 
 ```
@@ -35,16 +35,31 @@ away_outcomes <- df |>
   )) |>
   select(team, outcome)
 
-all_outcomes <- bind_rows(home_outcomes, away_outcomes)
+neutral_outcomes <- df %>%
+  filter(neutral == TRUE) %>%
+  mutate(location = "Neutral", outcome = case_when(
+    home_score > away_score ~ "Home Win",
+    home_score < away_score ~ "Away Win",
+    TRUE ~ "Draw"
+  )) 
+
+all_outcomes <- bind_rows(home_outcomes, away_outcomes, neutral_outcomes)
+first_two_columns <- all_outcomes %>%
+  select(team, outcome)
 
 # Calculate the count of Win, Lose, and Draw for each team
-outcome_per_team <- all_outcomes |>
+outcome_per_team <- first_two_columns |> 
   group_by(team, outcome) |>
+  filter(!is.na(team)) |>
   summarise(count = n(), .groups = 'drop') 
+
 #Calculate the total number of matches 
 total_matches <- outcome_per_team |> 
   group_by(team) |> 
+   filter(!is.na(team)) |> 
   summarise(total = sum(count), .groups = 'drop')
+
+
 # Calculate the winning ratio for each team
 winning_ratios <- outcome_per_team |>
   filter(outcome == "Win") |>
@@ -70,6 +85,7 @@ top_10 <- top_10 |>
   left_join(winning_ratios |> select(team, winning_ratio), by = "team")
 ```
 
+
 ```{r myplot, fig.width=8, fig.height=6}
 # Create a stacked bar plot to show the proportions
 ggplot(top_10, aes(x = reorder(team, -winning_ratio), 
@@ -89,3 +105,6 @@ ggplot(top_10, aes(x = reorder(team, -winning_ratio),
 ```
 
 Comparison on the performance between international football teams has been a controversial topic. The following data was collected from a live update dataset of international football matches since 1872, available on Kaggle. Data transformation and visualization were used to analyze the performance of the top 10 teams with most international appearances. The visualization indicates that the top 5 teams with highest winning rate came from Europe, South America, and Asia.
+
+
+
